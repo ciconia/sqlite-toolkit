@@ -1,0 +1,30 @@
+PATH
+  remote: .
+  specs:
+    sqlite-toolkit (0.33)
+      sqlite3 (~> 1.4.2)
+
+GEM
+  remote: http://rubygems.org/
+  specs:
+    ansi (1.5.0)
+    builder (3.2.4)
+    minitest (5.13.0)
+    minitest-reporters (1.4.2)
+      ansi
+      builder
+      minitest (>= 5.0)
+      ruby-progressbar
+    ruby-progressbar (1.10.1)
+    sqlite3 (1.4.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  minitest (= 5.13.0)
+  minitest-reporters (= 1.4.2)
+  sqlite-toolkit!
+
+BUNDLED WITH
+   2.1.4
