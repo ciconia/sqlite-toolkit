@@ -24,21 +24,21 @@ class KeyValueTest < Minitest::Test
   end
 
   def test_exists_del
-    assert_equal false, @db.exists?('foo')
-    assert_equal false, @db.exists?('bar')
+    assert_equal false, @db.exists('foo')
+    assert_equal false, @db.exists('bar')
 
     @db.set('foo', 42)
-    assert_equal true, @db.exists?('foo')
-    assert_equal false, @db.exists?('bar')
+    assert_equal true, @db.exists('foo')
+    assert_equal false, @db.exists('bar')
 
     @db.set('bar', 43)
-    assert_equal true, @db.exists?('foo')
-    assert_equal true, @db.exists?('bar')
+    assert_equal true, @db.exists('foo')
+    assert_equal true, @db.exists('bar')
 
     @db.del('foo')
-    assert_equal false, @db.exists?('foo')
+    assert_equal false, @db.exists('foo')
     assert_nil @db.get('foo')
-    assert_equal true, @db.exists?('bar')
+    assert_equal true, @db.exists('bar')
     assert_equal '43', @db.get('bar')
   end
 
@@ -135,5 +135,80 @@ class KeyValueTest < Minitest::Test
 
     @db.incrby('foo', 43)
     assert_equal '4', @db.get('foo')
+  end
+end
+
+class HashTest < Minitest::Test
+  def setup
+    @db = SQLiteToolkit::RedDatabase.new('')
+  end
+
+  def test_hget_hset
+    assert_equal false, @db.exists('foo')
+    assert_nil @db.hget('foo', 'bar')
+    
+    @db.hset('foo', 'bar', 'baz')
+    assert_equal true, @db.exists('foo')
+    assert_equal 'baz', @db.hget('foo', 'bar')
+
+    @db.hset('foo', 'bar-bar', 'baz-baz')
+    assert_equal 'baz', @db.hget('foo', 'bar')
+    assert_equal 'baz-baz', @db.hget('foo', 'bar-bar')
+
+    @db.hset('foo', 'bar bar', 'baz baz')
+    assert_equal 'baz', @db.hget('foo', 'bar')
+    assert_equal 'baz-baz', @db.hget('foo', 'bar-bar')
+    assert_equal 'baz baz', @db.hget('foo', 'bar bar')
+  end
+
+  def test_hgetall
+    assert_equal({}, @db.hgetall('foo'))
+
+    @db.hset('foo', 'bar', 'baz')
+    assert_equal({ 'bar' => 'baz' }, @db.hgetall('foo'))
+
+    @db.hset('foo', 'bar-bar', 'baz-baz')
+    assert_equal({ 'bar' => 'baz', 'bar-bar' => 'baz-baz' }, @db.hgetall('foo'))
+  end
+
+  def test_hexists
+    assert !@db.hexists('foo', 'bar')
+
+    @db.hset('foo', 'bar', 'baz')
+    assert @db.hexists('foo', 'bar')
+    assert !@db.hexists('foo', 'baz')
+  end
+
+  def test_hkeys
+    assert_equal [], @db.hkeys('foo')
+
+    @db.hset('foo', 'bar', 'baz')
+    @db.hset('foo', 'bar-bar', 'baz-baz')
+
+    assert_equal ['bar', 'bar-bar'], @db.hkeys('foo')
+  end
+
+  def test_hvals
+    assert_equal [], @db.hvals('foo')
+
+    @db.hset('foo', 'bar', 'baz')
+    @db.hset('foo', 'bar-bar', 'baz-baz')
+
+    assert_equal ['baz', 'baz-baz'], @db.hvals('foo')
+  end
+
+  def test_hmset
+    @db.hmset('foo', 'bar', 1, 'baz', 2)
+    assert_equal({ 'bar' => 1, 'baz' => 2 }, @db.hgetall('foo'))
+
+    @db.mapped_hmset('foo', 'what' => 42, 'why' => 43)
+    assert_equal({ 'bar' => 1, 'baz' => 2, 'what' => 42, 'why' => 43 }, @db.hgetall('foo'))
+  end
+
+  def test_hdel
+    @db.hset('foo', 'bar', 'baz')
+    @db.hset('foo', 'bar-bar', 'baz-baz')
+    @db.hdel('foo', 'bar')
+    assert_equal({ 'bar-bar' => 'baz-baz' }, @db.hgetall('foo'))
   end
 end
