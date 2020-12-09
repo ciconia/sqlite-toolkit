@@ -212,3 +212,109 @@ class HashTest < Minitest::Test
     assert_equal({ 'bar-bar' => 'baz-baz' }, @db.hgetall('foo'))
   end
 end
+
+class ListTest < Minitest::Test
+  def setup
+    @db = SQLiteToolkit::RedDatabase.new('')
+  end
+
+  def test_llen
+    assert_equal false, @db.exists('foo')
+    assert_equal 0, @db.llen('foo')
+    
+    @db.lpush('foo', 'bar')
+    assert_equal 1, @db.llen('foo')
+
+    @db.lpush('foo', 'bar')
+    assert_equal 2, @db.llen('foo')
+
+    @db.lpush('foo', 'baz')
+    assert_equal 3, @db.llen('foo')
+  end
+
+  def test_rpush
+    assert_equal [], @db.lrange('foo', 0, -1)
+
+    @db.rpush('foo', 'bar')
+    assert_equal ['bar'], @db.lrange('foo', 0, -1)
+    assert_equal ['bar'], @db.lrange('foo', 0, 0)
+    assert_equal [], @db.lrange('foo', 1, -1)
+
+    @db.rpush('foo', 'baz')
+    assert_equal ['bar', 'baz'], @db.lrange('foo', 0, -1)
+    assert_equal ['bar', 'baz'], @db.lrange('foo', 0, 1)
+    assert_equal ['bar'], @db.lrange('foo', 0, 0)
+    assert_equal ['baz'], @db.lrange('foo', 1, -1)
+
+    @db.rpush('foo', 'bud')
+    assert_equal ['bar', 'baz', 'bud'], @db.lrange('foo', 0, -1)
+    assert_equal ['bar', 'baz'], @db.lrange('foo', 0, 1)
+    assert_equal ['baz', 'bud'], @db.lrange('foo', 1, -1)
+    assert_equal ['bud'], @db.lrange('foo', 2, -1)
+
+    @db.rpush('foo', 'bar')
+    assert_equal ['bar', 'baz', 'bud', 'bar'], @db.lrange('foo', 0, -1)
+    assert_equal ['baz', 'bud', 'bar'], @db.lrange('foo', 1, -1)
+    assert_equal ['bud', 'bar'], @db.lrange('foo', 2, -1)
+    assert_equal ['bar'], @db.lrange('foo', 3, -1)
+  end
+
+  def test_lpush
+    assert_equal [], @db.lrange('foo', 0, -1)
+
+    @db.lpush('foo', 'bar')
+    assert_equal ['bar'], @db.lrange('foo', 0, -1)
+    assert_equal ['bar'], @db.lrange('foo', 0, 0)
+    assert_equal [], @db.lrange('foo', 1, -1)
+
+    @db.lpush('foo', 'baz')
+    assert_equal ['baz', 'bar'], @db.lrange('foo', 0, -1)
+    assert_equal ['baz', 'bar'], @db.lrange('foo', 0, 1)
+    assert_equal ['baz'], @db.lrange('foo', 0, 0)
+    assert_equal ['bar'], @db.lrange('foo', 1, -1)
+
+    @db.lpush('foo', 'bud')
+    assert_equal ['bud', 'baz', 'bar'], @db.lrange('foo', 0, -1)
+    assert_equal ['bud', 'baz'], @db.lrange('foo', 0, 1)
+    assert_equal ['baz', 'bar'], @db.lrange('foo', 1, -1)
+    assert_equal ['bar'], @db.lrange('foo', 2, -1)
+
+    @db.lpush('foo', 'bar')
+    assert_equal ['bar', 'bud', 'baz', 'bar'], @db.lrange('foo', 0, -1)
+    assert_equal ['bud', 'baz', 'bar'], @db.lrange('foo', 1, -1)
+    assert_equal ['baz', 'bar'], @db.lrange('foo', 2, -1)
+    assert_equal ['bar'], @db.lrange('foo', 3, -1)
+    assert_equal ['bar', 'bud', 'baz', 'bar'], @db.lrange('foo', 0, 3)
+    assert_equal ['bar', 'bud', 'baz'], @db.lrange('foo', 0, 2)
+    assert_equal ['bar', 'bud'], @db.lrange('foo', 0, 1)
+    assert_equal ['bar'], @db.lrange('foo', 0, 0)
+  end
+
+  def test_lpop
+    assert_nil @db.lpop('foo')
+    
+    @db.rpush('foo', 'bar')
+    @db.rpush('foo', 'baz')
+    @db.rpush('foo', 'bud')
+    assert_equal ['bar', 'baz', 'bud'], @db.lrange('foo', 0, -1)
+    assert_equal 'bar', @db.lpop('foo')
+    assert_equal ['baz', 'bud'], @db.lrange('foo', 0, -1)
+    assert_equal 'baz', @db.lpop('foo')
+    assert_equal 'bud', @db.lpop('foo')
+    assert_nil @db.lpop('foo')
+  end
+
+  def test_rpop
+    assert_nil @db.rpop('foo')
+    
+    @db.lpush('foo', 'bar')
+    @db.lpush('foo', 'baz')
+    @db.lpush('foo', 'bud')
+    assert_equal ['bud', 'baz', 'bar'], @db.lrange('foo', 0, -1)
+    assert_equal 'bar', @db.rpop('foo')
+    assert_equal ['bud', 'baz'], @db.lrange('foo', 0, -1)
+    assert_equal 'baz', @db.rpop('foo')
+    assert_equal 'bud', @db.rpop('foo')
+    assert_nil @db.rpop('foo')
+  end
+end

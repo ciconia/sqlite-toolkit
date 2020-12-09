@@ -28,5 +28,21 @@ module SQLiteToolkit
         value.to_s
       end
     end
+
+    def transaction(&block)
+      return yield if @in_transaction
+
+      do_transaction(&block)
+    end
+
+    def do_transaction
+      execute('begin')
+      result = yield
+      execute('commit')
+      result
+    rescue => e
+      execute('rollback')
+      raise e
+    end
   end
 end
